@@ -1,110 +1,90 @@
-#  Robô Aspirador
+Robô Aspirador
 
-Exercício de **Strategy** da disciplina de Programação Orientada a Objetos.
+Exercício de Strategy da disciplina de Programação Orientada a Objetos.
 
-O robô limpa uma sala com sofá, mesa, rack, estante e poltrona. Ele tem bateria para 300 passos e, a cada passo, decide para onde ir. Hoje ele sabe limpar de dois jeitos:
+Nesse projeto um robô aspirador limpa uma sala com sofá, mesa, rack, estante e poltrona. Ele tem bateria para 300 passos e, a cada passo, decide para onde ir. Antes, os modos de limpeza (Aleatória e Ricochete) estavam escritos dentro da classe Robo, num if atrás do outro. Eu tirei esses modos de dentro do robô e transformei cada um em uma rota (padrão Strategy), que o robô recebe pronta e pode trocar a qualquer momento. Também criei o modo novo, o Zigue-zague.
 
-- **Aleatória:** sorteia uma direção a cada passo.
-- **Ricochete:** segue reto e, quando bate, sorteia outra direção.
+Como rodar
+Abra o projeto na IDE (usei o VS Code).
+Rode a classe RoboApplication (ou ./mvnw spring-boot:run no terminal).
+Acesse http://localhost:8080.
 
-O fabricante quer lançar um modo novo, o **zigue-zague**, e já avisou que depois virão outros. O problema é que todos os modos estão escritos dentro da classe `Robo`, num `if` atrás do outro. Cada modo novo é mais um `if`, e a classe `Robo` não para de crescer.
+Escolha a rota, clique em Ligar e veja o robô trabalhar. O botão Ranking coloca cada rota numa sala nova, com a bateria cheia, e compara quanto cada uma limpou. A tela carrega o three.js da internet, então precisa de conexão.
 
-Seu trabalho é tirar os modos de dentro do robô e transformar cada um em uma **rota** que o robô recebe pronta e pode trocar a qualquer momento.
+O que eu fiz
+1. Interface Rota
 
----
+Criei a interface com dois métodos: getNome(), que aparece no menu e no ranking, e proximaDirecao(Sala sala, Posicao atual), que diz para onde o robô vai no próximo passo.
 
-## Como rodar
+2. Classes Aleatoria e Ricochete
 
-1. Abra o projeto na sua IDE.
-2. Rode a classe `RoboApplication` (ou `./mvnw spring-boot:run` no terminal).
-3. Acesse http://localhost:8080.
+Levei o código que estava dentro do Robo para cada uma:
 
-Escolha a rota, clique em **Ligar** e veja o robô trabalhar. O botão **Ranking** coloca cada rota numa sala nova, com a bateria cheia, e compara quanto cada uma limpou.
+Aleatória: sorteia uma direção a cada passo.
+Ricochete: segue reto e, quando bate, sorteia outra direção. Ela guarda a direção atual como atributo da própria classe.
+3. Classe Robo
+o atributo String modo virou Rota rota;
+o construtor recebe uma Rota;
+setModo(String) virou setRota(Rota);
+o andar() pergunta a direção para a rota;
+o proximaDirecao(), o sortearDirecao() e todos os ifs saíram do Robo;
+o getNomeDaRota() devolve o nome que vem da rota.
+4. Classe Simulador
+o modos() virou rotas(), que devolve uma lista de objetos Rota;
+o nomesDasRotas() monta a lista de nomes a partir das rotas;
+o escolherRota() procura a rota pelo nome e entrega para o robô;
+o ranking() testa cada rota numa sala nova;
+o reiniciar() cria uma rota nova com o mesmo nome, para o estado dela voltar do zero.
 
-A tela carrega o three.js da internet, então precisa de conexão.
+O rotas() cria objetos novos a cada chamada, de propósito (explico no "Para pensar").
 
----
+5. Rota ZigueZague
 
-## O que já está pronto
+Ela anda na horizontal enquanto tiver caminho livre. Quando bate, inverte o sentido horizontal (direita ↔ esquerda) e muda de linha: desce, e se não der para descer, sobe (e vice-versa). Para isso ela guarda três coisas: o sentido horizontal, o sentido vertical e um boolean que avisa que acabou de mudar de linha (assim, no passo seguinte, ela volta a andar na horizontal).
 
-Você **não precisa mexer** em nada dentro de `controller`, `templates` e `static`.
+Adicionei ela na lista do Simulador e não precisei mexer no Robo. Ela aparece sozinha no menu e no ranking.
 
-No pacote `model`:
+Estrutura (pacote model)
+Classe	Para que serve
+Direcao	CIMA, BAIXO, ESQUERDA, DIREITA
+Posicao	Uma célula da sala. posicao.mover(direcao) devolve a célula vizinha.
+Sala	Móveis e sujeira. sala.livre(posicao) diz se dá para ir até a célula.
+Rota	Interface da estratégia de limpeza.
+Aleatoria	Rota que sorteia uma direção a cada passo.
+Ricochete	Rota que segue reto e sorteia outra direção ao bater.
+ZigueZague	Rota que vai e volta pelas linhas da sala.
+Robo	Anda, limpa, conta passos e batidas. Não tem mais if de modo.
+Simulador	Liga o robô à tela e monta o ranking.
 
-| Classe | Para que serve |
-| --- | --- |
-| `Direcao` | `CIMA`, `BAIXO`, `ESQUERDA`, `DIREITA` |
-| `Posicao` | Uma célula da sala. `posicao.mover(direcao)` devolve a célula vizinha. |
-| `Sala` | Móveis e sujeira. `sala.livre(posicao)` diz se dá para ir até aquela célula. |
-| `Robo` | Anda, limpa, conta passos e batidas. **É aqui que estão os `if`s.** |
-| `Simulador` | Liga o robô à tela e monta o ranking. Tem uma lista com os nomes dos modos. |
+Não mexi em nada de controller, templates e static.
 
----
+Resultados
 
-## O que você deve fazer
+Rodei o ranking várias vezes. O Zigue-zague deu sempre o mesmo resultado, porque ele não usa sorteio. As outras duas variam a cada rodada.
 
-### 1. Criar a interface `Rota`
+Rota	Sala limpa (300 passos)
+Aleatória	entre 27% e 57%
+Ricochete	entre 31% e 49%
+Zigue-zague	84% (só 2 batidas)
 
-```java
-public interface Rota {
-    String getNome();
-    Direcao proximaDirecao(Sala sala, Posicao atual);
-}
-```
+O Zigue-zague não chega a 100% porque a mesa divide a sala: ele acaba subindo e descendo só pelo lado direito e nunca passa pela área à esquerda da mesa.
 
-O nome aparece no menu da tela e no ranking.
+Como saber se terminou
+ O Robo não tem nenhum if sobre o modo de limpeza.
+ O menu mostra Aleatória, Ricochete e Zigue-zague.
+ Dá para trocar a rota com o robô ligado, no meio da limpeza.
+ No ranking, o Zigue-zague limpa bem mais que as outras duas.
+Desafio
 
-### 2. Tirar os modos de dentro do `Robo`
+Não fiz o desafio. Uma ideia para o futuro seria uma rota que prefere as células ainda sujas (sala.estaSuja(posicao)), que poderia resolver a parte da sala que o Zigue-zague não alcança.
 
-Crie as classes `Aleatoria` e `Ricochete`, as duas implementando `Rota`. O código de cada uma está hoje dentro do método `proximaDirecao()` do `Robo`: é só levar para o lugar certo.
+Para pensar
 
-Repare que o `Ricochete` precisa lembrar a direção em que está indo. Essa informação passa a ser um atributo da própria rota.
+O que mudou no Robo quando você criou o ZigueZague? Nada. Só criei a classe nova e coloquei na lista do Simulador. Esse é o ganho do Strategy: o Robo não precisa saber quais rotas existem, ele só pede a próxima direção para a rota que recebeu. Antes, cada modo novo era mais um if dentro dele.
 
-### 3. O robô passa a ter uma `Rota`
+Por que o Ricochete guarda a direção dentro dele, e não no Robo? Porque essa informação faz parte da estratégia do Ricochete (seguir reto até bater). Se ficasse no Robo, ele teria que cuidar de detalhes de cada rota, e rotas novas (como o Zigue-zague, que guarda outras coisas) teriam que se encaixar nele. Do jeito atual, cada rota cuida do próprio estado.
 
-No `Robo`:
-
-- troque o atributo `String modo` por `Rota rota`;
-- o construtor recebe uma `Rota` no lugar do nome;
-- troque `setModo(String)` por `setRota(Rota)`;
-- o `andar()` pergunta a direção para a rota;
-- o método `proximaDirecao()` e todos os `if`s saem do `Robo`;
-- `getNomeDaRota()` devolve o nome que vem da rota.
-
-### 4. Ajustar o `Simulador`
-
-O método `modos()` devolve uma lista de nomes. Troque por um método `rotas()` que devolve uma lista de objetos `Rota`, e ajuste `nomesDasRotas()`, `escolherRota()`, `ranking()` e o robô criado no atributo.
-
-Nesse ponto, o app deve estar funcionando como antes, mas com o código mais limpo e organizado e escalável.
-
-Atenção: o método `rotas()` precisa criar **objetos novos a cada chamada**. Pense no porquê depois de testar o ranking.
-
-### 5. Criar o zigue-zague
-
-Crie a rota `ZigueZague`:
-
-- anda na horizontal enquanto tiver caminho livre;
-- quando bater, inverte o sentido horizontal (direita ↔ esquerda) e desce uma linha;
-- se não der para descer, passa a subir (e vice-versa).
-
-Adicione o `ZigueZague` na lista do `Simulador`. Ele deve aparecer no menu da tela e no ranking **sem nenhuma alteração no `Robo`**.
-
----
-
-## Como saber se terminou
-
-- O `Robo` não tem nenhum `if` sobre o modo de limpeza.
-- O menu mostra Aleatória, Ricochete e Zigue-zague.
-- Dá para trocar a rota com o robô ligado, no meio da limpeza.
-- No ranking, o zigue-zague limpa bem mais que as outras duas.
-
-## Desafio
-
-Crie a sua própria rota e tente bater o zigue-zague no ranking. Ideias: espiral, seguir as paredes, zigue-zague na vertical, ou uma rota que prefere as células ainda sujas (`sala.estaSuja(posicao)`).
-
----
-
-## Para pensar
+O que aconteceria no ranking se rotas() devolvesse sempre os mesmos objetos? As rotas guardam estado (a direção do Ricochete, o sentido e a mudança de linha do Zigue-zague). Se os objetos fossem sempre os mesmos, cada teste do ranking começaria de onde a rodada anterior parou, e o robô que está na tela e o do ranking dividiriam a mesma rota. O resultado ficaria enviesado e diferente a cada vez. Criando objetos novos, cada teste começa do zero.
 
 1. O que mudou no `Robo` quando você criou o `ZigueZague`?
 2. Por que o `Ricochete` guarda a direção dentro dele, e não no `Robo`?
